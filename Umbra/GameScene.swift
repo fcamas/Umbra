@@ -8,7 +8,6 @@ import SpriteKit
 
 class GameScene: SKScene {
     
-    var umbra: SKSpriteNode!
     var umbraBody: SKNode!
     var movingLeft = false
     var movingRight = false
@@ -17,56 +16,79 @@ class GameScene: SKScene {
     
     override func didMove(to view: SKView) {
         backgroundColor = .black
-        
-        // World gravity
         physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         physicsWorld.contactDelegate = self
         
-        spawnGround()
+        buildStage()
         spawnUmbra()
         addButtons()
     }
     
-    func spawnGround() {
-        let ground = SKShapeNode(rectOf: CGSize(width: size.width, height: 20))
-        ground.fillColor = .darkGray
-        ground.strokeColor = .clear
-        ground.position = CGPoint(x: size.width / 2, y: 60)
-        ground.name = "ground"
+    func buildStage() {
+        let platforms: [(x: CGFloat, y: CGFloat, w: CGFloat)] = [
+            (size.width / 2, 60, size.width),   // ground
+            (200, 200, 180),                      // left platform
+            (size.width - 180, 280, 180),         // right platform
+            (size.width / 2, 360, 160),           // middle high
+            (100, 420, 120),                      // far left high
+        ]
         
-        ground.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: size.width, height: 20))
-        ground.physicsBody?.isDynamic = false
-        ground.physicsBody?.categoryBitMask = 0x1 << 1
-        ground.physicsBody?.contactTestBitMask = 0x1 << 0
+        for p in platforms {
+            let plat = SKShapeNode(rectOf: CGSize(width: p.w, height: 18))
+            plat.fillColor = UIColor(red: 0.2, green: 0.8, blue: 0.6, alpha: 1.0)
+            plat.strokeColor = .clear
+            plat.position = CGPoint(x: p.x, y: p.y)
+            plat.name = "ground"
+            
+            plat.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: p.w, height: 18))
+            plat.physicsBody?.isDynamic = false
+            plat.physicsBody?.categoryBitMask = 0x1 << 1
+            plat.physicsBody?.contactTestBitMask = 0x1 << 0
+            plat.physicsBody?.collisionBitMask = 0x1 << 0
+            
+            addChild(plat)
+        }
         
-        addChild(ground)
+        // Left wall
+        let leftWall = SKShapeNode(rectOf: CGSize(width: 18, height: size.height))
+        leftWall.fillColor = UIColor(red: 0.2, green: 0.8, blue: 0.6, alpha: 1.0)
+        leftWall.strokeColor = .clear
+        leftWall.position = CGPoint(x: 9, y: size.height / 2)
+        leftWall.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 18, height: size.height))
+        leftWall.physicsBody?.isDynamic = false
+        addChild(leftWall)
+        
+        // Right wall
+        let rightWall = SKShapeNode(rectOf: CGSize(width: 18, height: size.height))
+        rightWall.fillColor = UIColor(red: 0.2, green: 0.8, blue: 0.6, alpha: 1.0)
+        rightWall.strokeColor = .clear
+        rightWall.position = CGPoint(x: size.width - 9, y: size.height / 2)
+        rightWall.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 18, height: size.height))
+        rightWall.physicsBody?.isDynamic = false
+        addChild(rightWall)
     }
     
     func spawnUmbra() {
         umbraBody = SKNode()
-        umbraBody.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        umbraBody.position = CGPoint(x: size.width / 2, y: 120)
         
-        // Physics
         umbraBody.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         umbraBody.physicsBody?.allowsRotation = false
         umbraBody.physicsBody?.categoryBitMask = 0x1 << 0
         umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
-        // Body
         let body = SKShapeNode(circleOfRadius: 30)
         body.fillColor = .white
         body.strokeColor = .clear
         umbraBody.addChild(body)
         
-        // Left eye
         let leftEye = SKShapeNode(circleOfRadius: 6)
         leftEye.fillColor = .black
         leftEye.strokeColor = .clear
         leftEye.position = CGPoint(x: -10, y: 8)
         umbraBody.addChild(leftEye)
         
-        // Right eye
         let rightEye = SKShapeNode(circleOfRadius: 6)
         rightEye.fillColor = .black
         rightEye.strokeColor = .clear
@@ -77,7 +99,6 @@ class GameScene: SKScene {
     }
     
     func addButtons() {
-        // Left button
         let leftBtn = SKShapeNode(rectOf: CGSize(width: 60, height: 60), cornerRadius: 10)
         leftBtn.fillColor = .darkGray
         leftBtn.strokeColor = .clear
@@ -89,7 +110,6 @@ class GameScene: SKScene {
         leftBtn.addChild(leftLabel)
         addChild(leftBtn)
         
-        // Right button
         let rightBtn = SKShapeNode(rectOf: CGSize(width: 60, height: 60), cornerRadius: 10)
         rightBtn.fillColor = .darkGray
         rightBtn.strokeColor = .clear
@@ -101,7 +121,6 @@ class GameScene: SKScene {
         rightBtn.addChild(rightLabel)
         addChild(rightBtn)
         
-        // Jump button
         let jumpBtn = SKShapeNode(rectOf: CGSize(width: 60, height: 60), cornerRadius: 10)
         jumpBtn.fillColor = .darkGray
         jumpBtn.strokeColor = .clear
