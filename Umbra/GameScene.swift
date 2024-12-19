@@ -13,6 +13,7 @@ class GameScene: SKScene {
     var movingRight = false
     let moveSpeed: CGFloat = 5.0
     var isOnGround = false
+    var facingRight = true
     
     override func didMove(to view: SKView) {
         backgroundColor = .black
@@ -26,11 +27,11 @@ class GameScene: SKScene {
     
     func buildStage() {
         let platforms: [(x: CGFloat, y: CGFloat, w: CGFloat)] = [
-            (size.width / 2, 60, size.width),   // ground
-            (200, 200, 180),                      // left platform
-            (size.width - 180, 280, 180),         // right platform
-            (size.width / 2, 360, 160),           // middle high
-            (100, 420, 120),                      // far left high
+            (size.width / 2, 60, size.width),
+            (200, 200, 180),
+            (size.width - 180, 280, 180),
+            (size.width / 2, 360, 160),
+            (100, 420, 120),
         ]
         
         for p in platforms {
@@ -39,17 +40,14 @@ class GameScene: SKScene {
             plat.strokeColor = .clear
             plat.position = CGPoint(x: p.x, y: p.y)
             plat.name = "ground"
-            
             plat.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: p.w, height: 18))
             plat.physicsBody?.isDynamic = false
             plat.physicsBody?.categoryBitMask = 0x1 << 1
             plat.physicsBody?.contactTestBitMask = 0x1 << 0
             plat.physicsBody?.collisionBitMask = 0x1 << 0
-            
             addChild(plat)
         }
         
-        // Left wall
         let leftWall = SKShapeNode(rectOf: CGSize(width: 18, height: size.height))
         leftWall.fillColor = UIColor(red: 0.2, green: 0.8, blue: 0.6, alpha: 1.0)
         leftWall.strokeColor = .clear
@@ -58,7 +56,6 @@ class GameScene: SKScene {
         leftWall.physicsBody?.isDynamic = false
         addChild(leftWall)
         
-        // Right wall
         let rightWall = SKShapeNode(rectOf: CGSize(width: 18, height: size.height))
         rightWall.fillColor = UIColor(red: 0.2, green: 0.8, blue: 0.6, alpha: 1.0)
         rightWall.strokeColor = .clear
@@ -71,6 +68,7 @@ class GameScene: SKScene {
     func spawnUmbra() {
         umbraBody = SKNode()
         umbraBody.position = CGPoint(x: size.width / 2, y: 120)
+        umbraBody.name = "umbra"
         
         umbraBody.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         umbraBody.physicsBody?.allowsRotation = false
@@ -99,6 +97,7 @@ class GameScene: SKScene {
     }
     
     func addButtons() {
+        // Left
         let leftBtn = SKShapeNode(rectOf: CGSize(width: 60, height: 60), cornerRadius: 10)
         leftBtn.fillColor = .darkGray
         leftBtn.strokeColor = .clear
@@ -110,6 +109,7 @@ class GameScene: SKScene {
         leftBtn.addChild(leftLabel)
         addChild(leftBtn)
         
+        // Right
         let rightBtn = SKShapeNode(rectOf: CGSize(width: 60, height: 60), cornerRadius: 10)
         rightBtn.fillColor = .darkGray
         rightBtn.strokeColor = .clear
@@ -121,6 +121,7 @@ class GameScene: SKScene {
         rightBtn.addChild(rightLabel)
         addChild(rightBtn)
         
+        // Jump
         let jumpBtn = SKShapeNode(rectOf: CGSize(width: 60, height: 60), cornerRadius: 10)
         jumpBtn.fillColor = .darkGray
         jumpBtn.strokeColor = .clear
@@ -131,15 +132,49 @@ class GameScene: SKScene {
         jumpLabel.verticalAlignmentMode = .center
         jumpBtn.addChild(jumpLabel)
         addChild(jumpBtn)
+        
+        // Attack
+        let attackBtn = SKShapeNode(rectOf: CGSize(width: 60, height: 60), cornerRadius: 10)
+        attackBtn.fillColor = UIColor(red: 0.6, green: 0.1, blue: 0.1, alpha: 1.0)
+        attackBtn.strokeColor = .clear
+        attackBtn.position = CGPoint(x: size.width - 140, y: 80)
+        attackBtn.name = "attackBtn"
+        let attackLabel = SKLabelNode(text: "X")
+        attackLabel.fontSize = 30
+        attackLabel.verticalAlignmentMode = .center
+        attackBtn.addChild(attackLabel)
+        addChild(attackBtn)
+    }
+    
+    func shoot() {
+        let ball = SKShapeNode(circleOfRadius: 8)
+        ball.fillColor = UIColor(red: 0.9, green: 0.8, blue: 0.2, alpha: 1.0)
+        ball.strokeColor = .clear
+        ball.position = umbraBody.position
+        ball.name = "projectile"
+        
+        ball.physicsBody = SKPhysicsBody(circleOfRadius: 8)
+        ball.physicsBody?.affectedByGravity = false
+        ball.physicsBody?.categoryBitMask = 0x1 << 2
+        ball.physicsBody?.collisionBitMask = 0
+        
+        addChild(ball)
+        
+        let direction: CGFloat = facingRight ? 1 : -1
+        let move = SKAction.moveBy(x: direction * size.width, y: 0, duration: 0.6)
+        let remove = SKAction.removeFromParent()
+        ball.run(SKAction.sequence([move, remove]))
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
             let location = touch.location(in: self)
             let node = atPoint(location)
-            if node.name == "leftBtn" || node.parent?.name == "leftBtn" { movingLeft = true }
-            if node.name == "rightBtn" || node.parent?.name == "rightBtn" { movingRight = true }
-            if node.name == "jumpBtn" || node.parent?.name == "jumpBtn" { jump() }
+            let name = node.name ?? node.parent?.name ?? ""
+            if name == "leftBtn" { movingLeft = true; facingRight = false }
+            if name == "rightBtn" { movingRight = true; facingRight = true }
+            if name == "jumpBtn" { jump() }
+            if name == "attackBtn" { shoot() }
         }
     }
     
@@ -147,8 +182,9 @@ class GameScene: SKScene {
         for touch in touches {
             let location = touch.location(in: self)
             let node = atPoint(location)
-            if node.name == "leftBtn" || node.parent?.name == "leftBtn" { movingLeft = false }
-            if node.name == "rightBtn" || node.parent?.name == "rightBtn" { movingRight = false }
+            let name = node.name ?? node.parent?.name ?? ""
+            if name == "leftBtn" { movingLeft = false }
+            if name == "rightBtn" { movingRight = false }
         }
     }
     
