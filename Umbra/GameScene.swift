@@ -15,6 +15,12 @@ class GameScene: SKScene {
     var isOnGround = false
     var facingRight = true
     
+    // Health
+    var health: CGFloat = 100
+    let maxHealth: CGFloat = 100
+    var healthBar: SKShapeNode!
+    var invincible = false
+    
     // Enemy
     var enemy: SKNode!
     var enemyMovingRight = true
@@ -30,6 +36,7 @@ class GameScene: SKScene {
         spawnUmbra()
         spawnEnemy()
         addButtons()
+        addHealthBar()
     }
     
     func buildStage() {
@@ -80,7 +87,7 @@ class GameScene: SKScene {
         umbraBody.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         umbraBody.physicsBody?.allowsRotation = false
         umbraBody.physicsBody?.categoryBitMask = 0x1 << 0
-        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1
+        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
         let body = SKShapeNode(circleOfRadius: 30)
@@ -111,17 +118,15 @@ class GameScene: SKScene {
         enemy.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 36, height: 36))
         enemy.physicsBody?.allowsRotation = false
         enemy.physicsBody?.categoryBitMask = 0x1 << 3
-        enemy.physicsBody?.contactTestBitMask = 0x1 << 2
+        enemy.physicsBody?.contactTestBitMask = 0x1 << 2 | 0x1 << 0
         enemy.physicsBody?.collisionBitMask = 0x1 << 1
         
-        // Enemy body
         let body = SKShapeNode(rectOf: CGSize(width: 36, height: 36), cornerRadius: 6)
         body.fillColor = UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
         body.strokeColor = .clear
         body.name = "enemyBody"
         enemy.addChild(body)
         
-        // Enemy eyes
         let leftEye = SKShapeNode(circleOfRadius: 5)
         leftEye.fillColor = .white
         leftEye.strokeColor = .clear
@@ -135,6 +140,97 @@ class GameScene: SKScene {
         enemy.addChild(rightEye)
         
         addChild(enemy)
+    }
+    
+    func addHealthBar() {
+        // Background bar
+        let bgBar = SKShapeNode(rectOf: CGSize(width: 154, height: 18), cornerRadius: 4)
+        bgBar.fillColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        bgBar.strokeColor = .clear
+        bgBar.position = CGPoint(x: 97, y: size.height - 30)
+        bgBar.zPosition = 10
+        addChild(bgBar)
+        
+        // Green health fill
+        healthBar = SKShapeNode(rectOf: CGSize(width: 150, height: 14), cornerRadius: 3)
+        healthBar.fillColor = UIColor(red: 0.2, green: 0.9, blue: 0.3, alpha: 1.0)
+        healthBar.strokeColor = .clear
+        healthBar.position = CGPoint(x: 97, y: size.height - 30)
+        healthBar.zPosition = 11
+        addChild(healthBar)
+        
+        // Heart label
+        let heart = SKLabelNode(text: "HP")
+        heart.fontSize = 13
+        heart.fontColor = .white
+        heart.position = CGPoint(x: 22, y: size.height - 36)
+        heart.zPosition = 11
+        addChild(heart)
+    }
+    
+    func updateHealthBar() {
+        let ratio = health / maxHealth
+        let newWidth = 150 * ratio
+        healthBar.xScale = ratio
+        healthBar.position.x = 97 - (150 - newWidth) / 2
+    }
+    
+    func takeDamage() {
+        guard !invincible else { return }
+        invincible = true
+        health -= 20
+        if health < 0 { health = 0 }
+        updateHealthBar()
+        
+        // Flash Umbra
+        let fadeOut = SKAction.fadeAlpha(to: 0.2, duration: 0.1)
+        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.1)
+        let blink = SKAction.repeat(SKAction.sequence([fadeOut, fadeIn]), count: 4)
+        let resetInvincible = SKAction.run { self.invincible = false }
+        umbraBody.run(SKAction.sequence([blink, resetInvincible]))
+        
+        if health <= 0 { gameOver() }
+    }
+    
+    func gameOver() {
+        let label = SKLabelNode(text: "GAME OVER")
+        label.fontSize = 40
+        label.fontColor = .red
+        label.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        label.zPosition = 20
+        addChild(label)
+        umbraBody.physicsBody?.isDynamic = false
+        enemyAlive = false
+    }
+    
+    func killEnemy() {
+        guard enemyAlive else { return }
+        enemyAlive = false
+        let flash = SKAction.colorize(with: .white, colorBlendFactor: 1.0, duration: 0.1)
+        let fade = SKAction.fadeOut(withDuration: 0.3)
+        let remove = SKAction.removeFromParent()
+        enemy.run(SKAction.sequence([flash, fade, remove]))
+    }
+    
+    func shoot() {
+        let ball = SKShapeNode(circleOfRadius: 8)
+        ball.fillColor = UIColor(red: 0.9, green: 0.8, blue: 0.2, alpha: 1.0)
+        ball.strokeColor = .clear
+        ball.position = umbraBody.position
+        ball.name = "projectile"
+        
+        ball.physicsBody = SKPhysicsBody(circleOfRadius: 8)
+        ball.physicsBody?.affectedByGravity = false
+        ball.physicsBody?.categoryBitMask = 0x1 << 2
+        ball.physicsBody?.contactTestBitMask = 0x1 << 3
+        ball.physicsBody?.collisionBitMask = 0
+        
+        addChild(ball)
+        
+        let direction: CGFloat = facingRight ? 1 : -1
+        let move = SKAction.moveBy(x: direction * size.width, y: 0, duration: 0.6)
+        let remove = SKAction.removeFromParent()
+        ball.run(SKAction.sequence([move, remove]))
     }
     
     func addButtons() {
@@ -183,38 +279,6 @@ class GameScene: SKScene {
         addChild(attackBtn)
     }
     
-    func shoot() {
-        let ball = SKShapeNode(circleOfRadius: 8)
-        ball.fillColor = UIColor(red: 0.9, green: 0.8, blue: 0.2, alpha: 1.0)
-        ball.strokeColor = .clear
-        ball.position = umbraBody.position
-        ball.name = "projectile"
-        
-        ball.physicsBody = SKPhysicsBody(circleOfRadius: 8)
-        ball.physicsBody?.affectedByGravity = false
-        ball.physicsBody?.categoryBitMask = 0x1 << 2
-        ball.physicsBody?.contactTestBitMask = 0x1 << 3
-        ball.physicsBody?.collisionBitMask = 0
-        
-        addChild(ball)
-        
-        let direction: CGFloat = facingRight ? 1 : -1
-        let move = SKAction.moveBy(x: direction * size.width, y: 0, duration: 0.6)
-        let remove = SKAction.removeFromParent()
-        ball.run(SKAction.sequence([move, remove]))
-    }
-    
-    func killEnemy() {
-        guard enemyAlive else { return }
-        enemyAlive = false
-        
-        // Flash red then disappear
-        let flash = SKAction.colorize(with: .white, colorBlendFactor: 1.0, duration: 0.1)
-        let fade = SKAction.fadeOut(withDuration: 0.3)
-        let remove = SKAction.removeFromParent()
-        enemy.run(SKAction.sequence([flash, fade, remove]))
-    }
-    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
             let location = touch.location(in: self)
@@ -247,7 +311,6 @@ class GameScene: SKScene {
         if movingLeft { umbraBody.position.x -= moveSpeed }
         if movingRight { umbraBody.position.x += moveSpeed }
         
-        // Enemy patrol
         if enemyAlive {
             if enemyMovingRight {
                 enemy.position.x += enemySpeed
@@ -265,18 +328,21 @@ extension GameScene: SKPhysicsContactDelegate {
         let nameA = contact.bodyA.node?.name ?? ""
         let nameB = contact.bodyB.node?.name ?? ""
         
-        // Umbra lands on ground
         if (nameA == "umbra" && nameB == "ground") ||
            (nameB == "umbra" && nameA == "ground") {
             isOnGround = true
         }
         
-        // Projectile hits enemy
         if (nameA == "projectile" && nameB == "enemy") ||
            (nameB == "projectile" && nameA == "enemy") {
             contact.bodyA.node?.removeFromParent()
             contact.bodyB.node?.removeFromParent()
             killEnemy()
+        }
+        
+        if (nameA == "umbra" && nameB == "enemy") ||
+           (nameB == "umbra" && nameA == "enemy") {
+            takeDamage()
         }
     }
 }
