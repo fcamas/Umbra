@@ -21,6 +21,11 @@ class GameScene: SKScene {
     var healthBar: SKShapeNode!
     var invincible = false
     
+    // Power up
+    var hasIce = false
+    var powerUpOrb: SKNode!
+    var powerUpLabel: SKLabelNode!
+    
     // Enemy
     var enemy: SKNode!
     var enemyMovingRight = true
@@ -35,8 +40,10 @@ class GameScene: SKScene {
         buildStage()
         spawnUmbra()
         spawnEnemy()
+        spawnPowerUp()
         addButtons()
         addHealthBar()
+        addPowerUpHUD()
     }
     
     func buildStage() {
@@ -87,7 +94,7 @@ class GameScene: SKScene {
         umbraBody.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         umbraBody.physicsBody?.allowsRotation = false
         umbraBody.physicsBody?.categoryBitMask = 0x1 << 0
-        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3
+        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
         let body = SKShapeNode(circleOfRadius: 30)
@@ -142,8 +149,68 @@ class GameScene: SKScene {
         addChild(enemy)
     }
     
+    func spawnPowerUp() {
+        powerUpOrb = SKNode()
+        powerUpOrb.position = CGPoint(x: size.width - 180, y: 320)
+        powerUpOrb.name = "iceOrb"
+        
+        // Orb glow ring
+        let ring = SKShapeNode(circleOfRadius: 18)
+        ring.fillColor = UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 0.3)
+        ring.strokeColor = UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
+        ring.lineWidth = 2
+        powerUpOrb.addChild(ring)
+        
+        // Orb core
+        let core = SKShapeNode(circleOfRadius: 10)
+        core.fillColor = UIColor(red: 0.6, green: 0.9, blue: 1.0, alpha: 1.0)
+        core.strokeColor = .clear
+        powerUpOrb.addChild(core)
+        
+        // Orb label
+        let label = SKLabelNode(text: "ICE")
+        label.fontSize = 9
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        powerUpOrb.addChild(label)
+        
+        // Pulse animation
+        let pulse = SKAction.sequence([
+            SKAction.scale(to: 1.2, duration: 0.6),
+            SKAction.scale(to: 1.0, duration: 0.6)
+        ])
+        powerUpOrb.run(SKAction.repeatForever(pulse))
+        
+        // Physics — sensor only
+        powerUpOrb.physicsBody = SKPhysicsBody(circleOfRadius: 18)
+        powerUpOrb.physicsBody?.isDynamic = false
+        powerUpOrb.physicsBody?.categoryBitMask = 0x1 << 4
+        powerUpOrb.physicsBody?.contactTestBitMask = 0x1 << 0
+        powerUpOrb.physicsBody?.collisionBitMask = 0
+        
+        addChild(powerUpOrb)
+    }
+    
+    func collectIceOrb() {
+        hasIce = true
+        powerUpOrb.removeFromParent()
+        powerUpLabel.text = "ICE"
+        powerUpLabel.fontColor = UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
+        
+        // Flash collected message
+        let collected = SKLabelNode(text: "ICE BEAM GET!")
+        collected.fontSize = 22
+        collected.fontColor = UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
+        collected.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
+        collected.zPosition = 20
+        addChild(collected)
+        
+        let fadeOut = SKAction.fadeOut(withDuration: 1.5)
+        let remove = SKAction.removeFromParent()
+        collected.run(SKAction.sequence([fadeOut, remove]))
+    }
+    
     func addHealthBar() {
-        // Background bar
         let bgBar = SKShapeNode(rectOf: CGSize(width: 154, height: 18), cornerRadius: 4)
         bgBar.fillColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
         bgBar.strokeColor = .clear
@@ -151,7 +218,6 @@ class GameScene: SKScene {
         bgBar.zPosition = 10
         addChild(bgBar)
         
-        // Green health fill
         healthBar = SKShapeNode(rectOf: CGSize(width: 150, height: 14), cornerRadius: 3)
         healthBar.fillColor = UIColor(red: 0.2, green: 0.9, blue: 0.3, alpha: 1.0)
         healthBar.strokeColor = .clear
@@ -159,7 +225,6 @@ class GameScene: SKScene {
         healthBar.zPosition = 11
         addChild(healthBar)
         
-        // Heart label
         let heart = SKLabelNode(text: "HP")
         heart.fontSize = 13
         heart.fontColor = .white
@@ -168,11 +233,27 @@ class GameScene: SKScene {
         addChild(heart)
     }
     
+    func addPowerUpHUD() {
+        let box = SKShapeNode(rectOf: CGSize(width: 60, height: 24), cornerRadius: 4)
+        box.fillColor = UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0)
+        box.strokeColor = .gray
+        box.position = CGPoint(x: size.width - 50, y: size.height - 30)
+        box.zPosition = 10
+        addChild(box)
+        
+        powerUpLabel = SKLabelNode(text: "NONE")
+        powerUpLabel.fontSize = 12
+        powerUpLabel.fontColor = .gray
+        powerUpLabel.verticalAlignmentMode = .center
+        powerUpLabel.position = CGPoint(x: size.width - 50, y: size.height - 31)
+        powerUpLabel.zPosition = 11
+        addChild(powerUpLabel)
+    }
+    
     func updateHealthBar() {
         let ratio = health / maxHealth
-        let newWidth = 150 * ratio
         healthBar.xScale = ratio
-        healthBar.position.x = 97 - (150 - newWidth) / 2
+        healthBar.position.x = 97 - (150 - 150 * ratio) / 2
     }
     
     func takeDamage() {
@@ -182,7 +263,6 @@ class GameScene: SKScene {
         if health < 0 { health = 0 }
         updateHealthBar()
         
-        // Flash Umbra
         let fadeOut = SKAction.fadeAlpha(to: 0.2, duration: 0.1)
         let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.1)
         let blink = SKAction.repeat(SKAction.sequence([fadeOut, fadeIn]), count: 4)
@@ -214,7 +294,13 @@ class GameScene: SKScene {
     
     func shoot() {
         let ball = SKShapeNode(circleOfRadius: 8)
-        ball.fillColor = UIColor(red: 0.9, green: 0.8, blue: 0.2, alpha: 1.0)
+        
+        if hasIce {
+            ball.fillColor = UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
+        } else {
+            ball.fillColor = UIColor(red: 0.9, green: 0.8, blue: 0.2, alpha: 1.0)
+        }
+        
         ball.strokeColor = .clear
         ball.position = umbraBody.position
         ball.name = "projectile"
@@ -343,6 +429,11 @@ extension GameScene: SKPhysicsContactDelegate {
         if (nameA == "umbra" && nameB == "enemy") ||
            (nameB == "umbra" && nameA == "enemy") {
             takeDamage()
+        }
+        
+        if (nameA == "umbra" && nameB == "iceOrb") ||
+           (nameB == "umbra" && nameA == "iceOrb") {
+            collectIceOrb()
         }
     }
 }
