@@ -273,14 +273,43 @@ class GameScene: SKScene {
     }
     
     func gameOver() {
-        let label = SKLabelNode(text: "GAME OVER")
-        label.fontSize = 40
-        label.fontColor = .red
-        label.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        label.zPosition = 20
-        addChild(label)
-        umbraBody.physicsBody?.isDynamic = false
         enemyAlive = false
+        umbraBody.physicsBody?.isDynamic = false
+        
+        // Dark overlay
+        let overlay = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height))
+        overlay.fillColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.7)
+        overlay.strokeColor = .clear
+        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        overlay.zPosition = 20
+        addChild(overlay)
+        
+        // Game Over label
+        let label = SKLabelNode(text: "GAME OVER")
+        label.fontSize = 48
+        label.fontColor = .red
+        label.fontName = "AvenirNext-Bold"
+        label.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+        label.zPosition = 21
+        addChild(label)
+        
+        // Restart button
+        let btn = SKShapeNode(rectOf: CGSize(width: 200, height: 50), cornerRadius: 12)
+        btn.fillColor = UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1.0)
+        btn.strokeColor = UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
+        btn.lineWidth = 1.5
+        btn.position = CGPoint(x: size.width / 2, y: size.height / 2 - 30)
+        btn.name = "restartBtn"
+        btn.zPosition = 21
+        
+        let btnLabel = SKLabelNode(text: "BACK TO MENU")
+        btnLabel.fontSize = 16
+        btnLabel.fontColor = UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
+        btnLabel.fontName = "AvenirNext-Bold"
+        btnLabel.verticalAlignmentMode = .center
+        btnLabel.name = "restartBtn"
+        btn.addChild(btnLabel)
+        addChild(btn)
     }
     
     func killEnemy() {
@@ -370,6 +399,12 @@ class GameScene: SKScene {
             let location = touch.location(in: self)
             let node = atPoint(location)
             let name = node.name ?? node.parent?.name ?? ""
+            if name == "restartBtn" {
+                let menu = MenuScene(size: size)
+                menu.scaleMode = scaleMode
+                let transition = SKTransition.fade(withDuration: 0.8)
+                view?.presentScene(menu, transition: transition)
+            }
             if name == "leftBtn" { movingLeft = true; facingRight = false }
             if name == "rightBtn" { movingRight = true; facingRight = true }
             if name == "jumpBtn" { jump() }
