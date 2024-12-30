@@ -97,22 +97,12 @@ class GameScene: SKScene {
         umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
-        let body = SKShapeNode(circleOfRadius: 30)
-        body.fillColor = .white
-        body.strokeColor = .clear
-        umbraBody.addChild(body)
-        
-        let leftEye = SKShapeNode(circleOfRadius: 6)
-        leftEye.fillColor = .black
-        leftEye.strokeColor = .clear
-        leftEye.position = CGPoint(x: -10, y: 8)
-        umbraBody.addChild(leftEye)
-        
-        let rightEye = SKShapeNode(circleOfRadius: 6)
-        rightEye.fillColor = .black
-        rightEye.strokeColor = .clear
-        rightEye.position = CGPoint(x: 10, y: 8)
-        umbraBody.addChild(rightEye)
+        // Real Umbra sprite
+        let sprite = SKSpriteNode(imageNamed: "umbra")
+        sprite.size = CGSize(width: 80, height: 80)
+        sprite.position = CGPoint(x: 0, y: 0)
+        sprite.name = "umbraSprite"
+        umbraBody.addChild(sprite)
         
         addChild(umbraBody)
     }
@@ -440,6 +430,10 @@ class GameScene: SKScene {
                 enemy.position.x -= enemySpeed
                 if enemy.position.x < 110 { enemyMovingRight = true }
             }
+        }
+        // Flip sprite based on direction
+        if let sprite = umbraBody.childNode(withName: "umbraSprite") as? SKSpriteNode {
+            sprite.xScale = facingRight ? 1.0 : -1.0
         }
     }
 }
