@@ -47,6 +47,13 @@ class GameScene: SKScene {
     }
     
     func buildStage() {
+        // Cave background
+        let bg = SKSpriteNode(imageNamed: "cave_bg")
+        bg.size = CGSize(width: size.width, height: size.height)
+        bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        bg.zPosition = -1
+        addChild(bg)
+        
         let platforms: [(x: CGFloat, y: CGFloat, w: CGFloat)] = [
             (size.width / 2, 60, size.width),
             (200, 200, 180),
@@ -57,10 +64,12 @@ class GameScene: SKScene {
         
         for p in platforms {
             let plat = SKShapeNode(rectOf: CGSize(width: p.w, height: 18))
-            plat.fillColor = UIColor(red: 0.2, green: 0.8, blue: 0.6, alpha: 1.0)
-            plat.strokeColor = .clear
+            plat.fillColor = UIColor(red: 0.2, green: 0.1, blue: 0.3, alpha: 0.9)
+            plat.strokeColor = UIColor(red: 0.5, green: 0.3, blue: 0.7, alpha: 1.0)
+            plat.lineWidth = 1.5
             plat.position = CGPoint(x: p.x, y: p.y)
             plat.name = "ground"
+            plat.zPosition = 1
             plat.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: p.w, height: 18))
             plat.physicsBody?.isDynamic = false
             plat.physicsBody?.categoryBitMask = 0x1 << 1
@@ -70,7 +79,7 @@ class GameScene: SKScene {
         }
         
         let leftWall = SKShapeNode(rectOf: CGSize(width: 18, height: size.height))
-        leftWall.fillColor = UIColor(red: 0.2, green: 0.8, blue: 0.6, alpha: 1.0)
+        leftWall.fillColor = UIColor(red: 0.2, green: 0.1, blue: 0.3, alpha: 0.9)
         leftWall.strokeColor = .clear
         leftWall.position = CGPoint(x: 9, y: size.height / 2)
         leftWall.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 18, height: size.height))
@@ -78,7 +87,7 @@ class GameScene: SKScene {
         addChild(leftWall)
         
         let rightWall = SKShapeNode(rectOf: CGSize(width: 18, height: size.height))
-        rightWall.fillColor = UIColor(red: 0.2, green: 0.8, blue: 0.6, alpha: 1.0)
+        rightWall.fillColor = UIColor(red: 0.2, green: 0.1, blue: 0.3, alpha: 0.9)
         rightWall.strokeColor = .clear
         rightWall.position = CGPoint(x: size.width - 9, y: size.height / 2)
         rightWall.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 18, height: size.height))
@@ -112,29 +121,25 @@ class GameScene: SKScene {
         enemy.position = CGPoint(x: 200, y: 240)
         enemy.name = "enemy"
         
-        enemy.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 36, height: 36))
+        enemy.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 50, height: 50))
         enemy.physicsBody?.allowsRotation = false
         enemy.physicsBody?.categoryBitMask = 0x1 << 3
         enemy.physicsBody?.contactTestBitMask = 0x1 << 2 | 0x1 << 0
         enemy.physicsBody?.collisionBitMask = 0x1 << 1
         
-        let body = SKShapeNode(rectOf: CGSize(width: 36, height: 36), cornerRadius: 6)
-        body.fillColor = UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
-        body.strokeColor = .clear
-        body.name = "enemyBody"
-        enemy.addChild(body)
+        // Real enemy sprite
+        let sprite = SKSpriteNode(imageNamed: "enemy_sprite")
+        sprite.size = CGSize(width: 64, height: 64)
+        sprite.position = CGPoint(x: 0, y: 0)
+        sprite.name = "enemyBody"
+        enemy.addChild(sprite)
         
-        let leftEye = SKShapeNode(circleOfRadius: 5)
-        leftEye.fillColor = .white
-        leftEye.strokeColor = .clear
-        leftEye.position = CGPoint(x: -8, y: 6)
-        enemy.addChild(leftEye)
-        
-        let rightEye = SKShapeNode(circleOfRadius: 5)
-        rightEye.fillColor = .white
-        rightEye.strokeColor = .clear
-        rightEye.position = CGPoint(x: 8, y: 6)
-        enemy.addChild(rightEye)
+        // Red eye glow pulse
+        let pulse = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.6, duration: 0.5),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.5)
+        ])
+        sprite.run(SKAction.repeatForever(pulse))
         
         addChild(enemy)
     }
