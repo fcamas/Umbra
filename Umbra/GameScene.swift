@@ -112,7 +112,15 @@ class GameScene: SKScene {
         sprite.position = CGPoint(x: 0, y: 0)
         sprite.name = "umbraSprite"
         umbraBody.addChild(sprite)
-        
+        // Idle float animation
+        let floatUp = SKAction.moveBy(x: 0, y: 6, duration: 0.8)
+        let floatDown = SKAction.moveBy(x: 0, y: -6, duration: 0.8)
+        floatUp.timingMode = .easeInEaseOut
+        floatDown.timingMode = .easeInEaseOut
+        let float = SKAction.repeatForever(SKAction.sequence([floatUp, floatDown]))
+        if let sprite = umbraBody.childNode(withName: "umbraSprite") {
+            sprite.run(float)
+        }
         addChild(umbraBody)
     }
     
