@@ -2,7 +2,7 @@
 //  GameScene.swift
 //  Umbra
 //
-//  Created by Cat on 12/10/24.
+//  Created by Fredy C on 12/10/24.
 //
 import SpriteKit
 
@@ -29,7 +29,9 @@ class GameScene: SKScene {
     // Enemy
     var enemy: SKNode!
     var enemyMovingRight = true
-    let enemySpeed: CGFloat = 2.0
+    var enemySpeed: CGFloat = 2.0
+    var bossHealth: Int = 5
+    var bossDeathPosition: CGPoint = .zero
     var enemyAlive = true
     
     override func didMove(to view: SKView) {
@@ -45,6 +47,14 @@ class GameScene: SKScene {
         addHealthBar()
         addPowerUpHUD()
     }
+    
+    func enterStage2() {
+        let stage2 = Stage2Scene(size: size)
+        stage2.scaleMode = scaleMode
+        let transition = SKTransition.fade(withDuration: 1.0)
+        view?.presentScene(stage2, transition: transition)
+    }
+    
     
     func buildStage() {
         // Cave background
@@ -93,6 +103,8 @@ class GameScene: SKScene {
         rightWall.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 18, height: size.height))
         rightWall.physicsBody?.isDynamic = false
         addChild(rightWall)
+
+        
     }
     
     func spawnUmbra() {
@@ -103,12 +115,12 @@ class GameScene: SKScene {
         umbraBody.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         umbraBody.physicsBody?.allowsRotation = false
         umbraBody.physicsBody?.categoryBitMask = 0x1 << 0
-        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4
+        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4 | 0x1 << 5
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
         // Real Umbra sprite
         let sprite = SKSpriteNode(imageNamed: "umbra")
-        sprite.size = CGSize(width: 80, height: 80)
+        sprite.size = CGSize(width: 110, height: 110)
         sprite.position = CGPoint(x: 0, y: 0)
         sprite.name = "umbraSprite"
         umbraBody.addChild(sprite)
@@ -126,26 +138,49 @@ class GameScene: SKScene {
     
     func spawnEnemy() {
         enemy = SKNode()
-        enemy.position = CGPoint(x: 200, y: 240)
+        enemy.position = CGPoint(x: size.width / 2, y: 100)
         enemy.name = "enemy"
         
-        enemy.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 50, height: 50))
+        // Boss is 2x size
+        enemy.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 100, height: 100))
         enemy.physicsBody?.allowsRotation = false
         enemy.physicsBody?.categoryBitMask = 0x1 << 3
         enemy.physicsBody?.contactTestBitMask = 0x1 << 2 | 0x1 << 0
         enemy.physicsBody?.collisionBitMask = 0x1 << 1
         
-        // Real enemy sprite
         let sprite = SKSpriteNode(imageNamed: "enemy_sprite")
-        sprite.size = CGSize(width: 64, height: 64)
-        sprite.position = CGPoint(x: 0, y: 0)
+        sprite.size = CGSize(width: 120, height: 120)
         sprite.name = "enemyBody"
         enemy.addChild(sprite)
         
-        // Red eye glow pulse
+        // Health bar above boss
+        let bossHpBg = SKShapeNode(rectOf: CGSize(width: 104, height: 12), cornerRadius: 3)
+        bossHpBg.fillColor = UIColor(red: 0.3, green: 0.0, blue: 0.0, alpha: 1.0)
+        bossHpBg.strokeColor = .clear
+        bossHpBg.position = CGPoint(x: 0, y: 72)
+        bossHpBg.name = "bossHpBg"
+        enemy.addChild(bossHpBg)
+        
+        let bossHpBar = SKShapeNode(rectOf: CGSize(width: 100, height: 8), cornerRadius: 2)
+        bossHpBar.fillColor = UIColor(red: 0.9, green: 0.1, blue: 0.1, alpha: 1.0)
+        bossHpBar.strokeColor = .clear
+        bossHpBar.position = CGPoint(x: 0, y: 72)
+        bossHpBar.name = "bossHpBar"
+        enemy.addChild(bossHpBar)
+        
+        // Boss name label
+        let bossLabel = SKLabelNode(text: "SHADOW BEAST")
+        bossLabel.fontSize = 11
+        bossLabel.fontColor = UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1.0)
+        bossLabel.fontName = "AvenirNext-Bold"
+        bossLabel.position = CGPoint(x: 0, y: 82)
+        bossLabel.name = "bossLabel"
+        enemy.addChild(bossLabel)
+        
+        // Red eye pulse
         let pulse = SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.6, duration: 0.5),
-            SKAction.fadeAlpha(to: 1.0, duration: 0.5)
+            SKAction.fadeAlpha(to: 0.5, duration: 0.3),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.3)
         ])
         sprite.run(SKAction.repeatForever(pulse))
         
@@ -318,10 +353,80 @@ class GameScene: SKScene {
     func killEnemy() {
         guard enemyAlive else { return }
         enemyAlive = false
-        let flash = SKAction.colorize(with: .white, colorBlendFactor: 1.0, duration: 0.1)
-        let fade = SKAction.fadeOut(withDuration: 0.3)
+        bossDeathPosition = enemy.position
+        
+        // Screen shake
+        let shakeRight = SKAction.moveBy(x: 10, y: 0, duration: 0.05)
+        let shakeLeft = SKAction.moveBy(x: -10, y: 0, duration: 0.05)
+        let shakeSeq = SKAction.repeat(SKAction.sequence([shakeRight, shakeLeft]), count: 5)
+        self.run(shakeSeq)
+        
+        // Boss death — flash and explode
+        let flash = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.1, duration: 0.1),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.1)
+        ])
+        let flashRepeat = SKAction.repeat(flash, count: 6)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.4)
+        let spawnDoor = SKAction.run { self.spawnDoorFromBoss() }
         let remove = SKAction.removeFromParent()
-        enemy.run(SKAction.sequence([flash, fade, remove]))
+        
+        enemy.run(SKAction.sequence([flashRepeat, fadeOut, spawnDoor, remove]))
+    }
+    
+    func spawnDoorFromBoss() {
+        let door = SKShapeNode(rectOf: CGSize(width: 24, height: 64), cornerRadius: 6)
+        door.fillColor = UIColor(red: 0.3, green: 0.1, blue: 0.5, alpha: 0.9)
+        door.strokeColor = UIColor(red: 0.7, green: 0.3, blue: 1.0, alpha: 1.0)
+        door.lineWidth = 2
+        door.position = bossDeathPosition
+        door.name = "stageDoor"
+        door.zPosition = 2
+        door.alpha = 0
+        door.setScale(0.1)
+        
+        // Door rises from death position
+        let appear = SKAction.group([
+            SKAction.fadeIn(withDuration: 0.5),
+            SKAction.scale(to: 1.0, duration: 0.5)
+        ])
+        
+        // Pulse after appearing
+        let pulse = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.5, duration: 0.6),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.6)
+        ])
+        
+        door.run(SKAction.sequence([appear, SKAction.repeatForever(pulse)]))
+        
+        // Door label
+        let label = SKLabelNode(text: "STAGE 2")
+        label.fontSize = 10
+        label.fontColor = UIColor(red: 0.7, green: 0.3, blue: 1.0, alpha: 1.0)
+        label.fontName = "AvenirNext-Bold"
+        label.position = CGPoint(x: 0, y: 38)
+        door.addChild(label)
+        
+        door.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 24, height: 64))
+        door.physicsBody?.isDynamic = false
+        door.physicsBody?.categoryBitMask = 0x1 << 5
+        door.physicsBody?.contactTestBitMask = 0x1 << 0
+        door.physicsBody?.collisionBitMask = 0
+        
+        addChild(door)
+        
+        // Big YOU WIN flash
+        let winLabel = SKLabelNode(text: "BOSS DEFEATED!")
+        winLabel.fontSize = 26
+        winLabel.fontColor = UIColor(red: 0.7, green: 0.3, blue: 1.0, alpha: 1.0)
+        winLabel.fontName = "AvenirNext-Bold"
+        winLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+        winLabel.zPosition = 20
+        addChild(winLabel)
+        
+        let fadeOut = SKAction.fadeOut(withDuration: 1.5)
+        let remove = SKAction.removeFromParent()
+        winLabel.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), fadeOut, remove]))
     }
     
     func shoot() {
@@ -463,9 +568,38 @@ extension GameScene: SKPhysicsContactDelegate {
         
         if (nameA == "projectile" && nameB == "enemy") ||
            (nameB == "projectile" && nameA == "enemy") {
-            contact.bodyA.node?.removeFromParent()
-            contact.bodyB.node?.removeFromParent()
-            killEnemy()
+            
+            // Remove projectile only
+            if nameA == "projectile" {
+                contact.bodyA.node?.removeFromParent()
+            } else {
+                contact.bodyB.node?.removeFromParent()
+            }
+            
+            // Guard against multiple hits
+            guard enemyAlive && bossHealth > 0 else { return }
+            
+            bossHealth -= 1
+            print("Boss health: \(bossHealth)")
+            
+            // Update boss health bar
+            if let bar = enemy.childNode(withName: "bossHpBar") as? SKShapeNode {
+                let ratio = CGFloat(bossHealth) / 5.0
+                bar.xScale = ratio
+            }
+            
+            // Boss gets faster and angrier when low health
+            if bossHealth == 2 {
+                enemySpeed = 4.0
+                if let sprite = enemy.childNode(withName: "enemyBody") as? SKSpriteNode {
+                    sprite.color = UIColor.red
+                    sprite.colorBlendFactor = 0.5
+                }
+            }
+            
+            if bossHealth <= 0 {
+                killEnemy()
+            }
         }
         
         if (nameA == "umbra" && nameB == "enemy") ||
@@ -476,6 +610,10 @@ extension GameScene: SKPhysicsContactDelegate {
         if (nameA == "umbra" && nameB == "iceOrb") ||
            (nameB == "umbra" && nameA == "iceOrb") {
             collectIceOrb()
+        }
+        if (nameA == "umbra" && nameB == "stageDoor") ||
+           (nameB == "umbra" && nameA == "stageDoor") {
+            enterStage2()
         }
     }
 }

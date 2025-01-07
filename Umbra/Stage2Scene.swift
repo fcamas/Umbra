@@ -1,3 +1,11 @@
+//
+//  Stage2Scene.swift
+//  Umbra
+//
+//  Created by Fredy C on 1/5/25.
+//
+
+
 import SpriteKit
 
 class Stage2Scene: SKScene {
