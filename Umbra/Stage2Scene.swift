@@ -98,7 +98,7 @@ class Stage2Scene: SKScene {
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
         let sprite = SKSpriteNode(imageNamed: "umbra")
-        sprite.size = CGSize(width: 80, height: 80)
+        sprite.size = CGSize(width: 110, height: 110)
         sprite.name = "umbraSprite"
         umbraBody.addChild(sprite)
         
