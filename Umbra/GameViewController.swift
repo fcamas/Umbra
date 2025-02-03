@@ -14,7 +14,12 @@ class GameViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .black
         
-        let scene = MenuScene(size: CGSize(width: 812, height: 375))
+        let screenSize = UIScreen.main.bounds.size
+        let sceneSize = CGSize(
+            width: max(screenSize.width, screenSize.height),
+            height: min(screenSize.width, screenSize.height)
+        )
+        let scene = MenuScene(size: sceneSize)
         scene.scaleMode = .aspectFill
         
         let skView = view as! SKView
