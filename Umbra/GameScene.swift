@@ -65,18 +65,27 @@ class GameScene: SKScene {
         addChild(bg)
         
         let platforms: [(x: CGFloat, y: CGFloat, w: CGFloat)] = [
-            (size.width / 2, 60, size.width),
-            (200, 200, 180),
-            (size.width - 180, 280, 180),
-            (size.width / 2, 360, 160),
-            (100, 420, 120),
+            (size.width / 2, 80, size.width),           // ground
+            (size.width * 0.2, 160, 200),               // left low
+            (size.width * 0.5, 200, 220),               // center mid
+            (size.width * 0.8, 160, 200),               // right low
+            (size.width * 0.3, 260, 160),               // left high
+            (size.width * 0.7, 260, 160),               // right high
         ]
         
-        for p in platforms {
+        for (index, p) in platforms.enumerated() {
             let plat = SKShapeNode(rectOf: CGSize(width: p.w, height: 18))
-            plat.fillColor = UIColor(red: 0.2, green: 0.1, blue: 0.3, alpha: 0.9)
-            plat.strokeColor = UIColor(red: 0.5, green: 0.3, blue: 0.7, alpha: 1.0)
-            plat.lineWidth = 1.5
+            
+            if index == 0 {
+                // Ground — invisible visually but physics still solid
+                plat.fillColor = .clear
+                plat.strokeColor = .clear
+            } else {
+                plat.fillColor = UIColor(red: 0.2, green: 0.1, blue: 0.3, alpha: 0.9)
+                plat.strokeColor = UIColor(red: 0.5, green: 0.3, blue: 0.7, alpha: 1.0)
+                plat.lineWidth = 1.5
+            }
+            
             plat.position = CGPoint(x: p.x, y: p.y)
             plat.name = "ground"
             plat.zPosition = 1
