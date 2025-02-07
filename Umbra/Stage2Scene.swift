@@ -45,19 +45,26 @@ class Stage2Scene: SKScene {
         
         // Different platform layout
         let platforms: [(x: CGFloat, y: CGFloat, w: CGFloat)] = [
-            (size.width / 2, 60, size.width),
-            (120, 250, 140),
-            (size.width - 120, 350, 140),
-            (size.width / 2, 450, 200),
-            (80, 520, 100),
-            (size.width - 80, 520, 100),
+            (size.width / 2, 80, size.width),           // ground
+            (size.width * 0.2, 170, 180),               // left low
+            (size.width * 0.5, 210, 200),               // center mid
+            (size.width * 0.8, 170, 180),               // right low
+            (size.width * 0.3, 270, 160),               // left high
+            (size.width * 0.7, 270, 160),               // right high
         ]
         
-        for p in platforms {
+        for (index, p) in platforms.enumerated() {
             let plat = SKShapeNode(rectOf: CGSize(width: p.w, height: 18))
-            plat.fillColor = UIColor(red: 0.3, green: 0.05, blue: 0.05, alpha: 0.9)
-            plat.strokeColor = UIColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 1.0)
-            plat.lineWidth = 1.5
+            
+            if index == 0 {
+                plat.fillColor = .clear
+                plat.strokeColor = .clear
+            } else {
+                plat.fillColor = UIColor(red: 0.3, green: 0.05, blue: 0.05, alpha: 0.9)
+                plat.strokeColor = UIColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 1.0)
+                plat.lineWidth = 1.5
+            }
+            
             plat.position = CGPoint(x: p.x, y: p.y)
             plat.name = "ground"
             plat.zPosition = 1
@@ -70,7 +77,7 @@ class Stage2Scene: SKScene {
         }
         
         let leftWall = SKShapeNode(rectOf: CGSize(width: 18, height: size.height))
-        leftWall.fillColor = UIColor(red: 0.3, green: 0.05, blue: 0.05, alpha: 0.9)
+        leftWall.fillColor = .clear
         leftWall.strokeColor = .clear
         leftWall.position = CGPoint(x: 9, y: size.height / 2)
         leftWall.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 18, height: size.height))
@@ -78,7 +85,7 @@ class Stage2Scene: SKScene {
         addChild(leftWall)
         
         let rightWall = SKShapeNode(rectOf: CGSize(width: 18, height: size.height))
-        rightWall.fillColor = UIColor(red: 0.3, green: 0.05, blue: 0.05, alpha: 0.9)
+        rightWall.fillColor = .clear
         rightWall.strokeColor = .clear
         rightWall.position = CGPoint(x: size.width - 9, y: size.height / 2)
         rightWall.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 18, height: size.height))
