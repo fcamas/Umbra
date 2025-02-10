@@ -10,6 +10,14 @@ import SpriteKit
 
 class Stage2Scene: SKScene {
     
+    var enemy1: SKNode!
+    var enemy2: SKNode!
+    var enemy1MovingRight = true
+    var enemy2MovingRight = false
+    let enemySpeed: CGFloat = 2.5
+    var enemy1Alive = true
+    var enemy2Alive = true
+    
     var umbraBody: SKNode!
     var movingLeft = false
     var movingRight = false
@@ -28,9 +36,11 @@ class Stage2Scene: SKScene {
         
         buildStage2()
         spawnUmbra()
+        spawnEnemies()
         addButtons()
         addHealthBar()
         addStageLabel()
+        
     }
     
     func buildStage2() {
@@ -273,6 +283,70 @@ class Stage2Scene: SKScene {
         umbraBody.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 120))
     }
     
+    func spawnEnemies() {
+        // Enemy 1 — left platform
+        enemy1 = SKNode()
+        enemy1.position = CGPoint(x: size.width * 0.2, y: 200)
+        enemy1.name = "enemy"
+        
+        enemy1.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 50, height: 50))
+        enemy1.physicsBody?.allowsRotation = false
+        enemy1.physicsBody?.categoryBitMask = 0x1 << 3
+        enemy1.physicsBody?.contactTestBitMask = 0x1 << 2 | 0x1 << 0
+        enemy1.physicsBody?.collisionBitMask = 0x1 << 1
+        
+        let sprite1 = SKSpriteNode(imageNamed: "enemy_sprite")
+        sprite1.size = CGSize(width: 64, height: 64)
+        sprite1.name = "enemyBody"
+        enemy1.addChild(sprite1)
+        
+        let pulse1 = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.5, duration: 0.4),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.4)
+        ])
+        sprite1.run(SKAction.repeatForever(pulse1))
+        addChild(enemy1)
+        
+        // Enemy 2 — right platform
+        enemy2 = SKNode()
+        enemy2.position = CGPoint(x: size.width * 0.8, y: 200)
+        enemy2.name = "enemy"
+        
+        enemy2.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 50, height: 50))
+        enemy2.physicsBody?.allowsRotation = false
+        enemy2.physicsBody?.categoryBitMask = 0x1 << 3
+        enemy2.physicsBody?.contactTestBitMask = 0x1 << 2 | 0x1 << 0
+        enemy2.physicsBody?.collisionBitMask = 0x1 << 1
+        
+        let sprite2 = SKSpriteNode(imageNamed: "enemy_sprite")
+        sprite2.size = CGSize(width: 64, height: 64)
+        sprite2.name = "enemyBody"
+        enemy2.addChild(sprite2)
+        
+        let pulse2 = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.5, duration: 0.3),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.3)
+        ])
+        sprite2.run(SKAction.repeatForever(pulse2))
+        addChild(enemy2)
+    }
+
+    func killEnemy1() {
+        guard enemy1Alive else { return }
+        enemy1Alive = false
+        let fade = SKAction.fadeOut(withDuration: 0.3)
+        let remove = SKAction.removeFromParent()
+        enemy1.run(SKAction.sequence([fade, remove]))
+    }
+
+    func killEnemy2() {
+        guard enemy2Alive else { return }
+        enemy2Alive = false
+        let fade = SKAction.fadeOut(withDuration: 0.3)
+        let remove = SKAction.removeFromParent()
+        enemy2.run(SKAction.sequence([fade, remove]))
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
             let location = touch.location(in: self)
@@ -306,6 +380,25 @@ class Stage2Scene: SKScene {
         if let sprite = umbraBody.childNode(withName: "umbraSprite") as? SKSpriteNode {
             sprite.xScale = facingRight ? 1.0 : -1.0
         }
+        if enemy1Alive {
+            if enemy1MovingRight {
+                enemy1.position.x += enemySpeed
+                if enemy1.position.x > size.width * 0.38 { enemy1MovingRight = false }
+            } else {
+                enemy1.position.x -= enemySpeed
+                if enemy1.position.x < size.width * 0.08 { enemy1MovingRight = true }
+            }
+        }
+
+        if enemy2Alive {
+            if enemy2MovingRight {
+                enemy2.position.x += enemySpeed
+                if enemy2.position.x > size.width * 0.95 { enemy2MovingRight = false }
+            } else {
+                enemy2.position.x -= enemySpeed
+                if enemy2.position.x < size.width * 0.65 { enemy2MovingRight = true }
+            }
+        }
     }
 }
 
@@ -313,9 +406,30 @@ extension Stage2Scene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
         let nameA = contact.bodyA.node?.name ?? ""
         let nameB = contact.bodyB.node?.name ?? ""
+        
         if (nameA == "umbra" && nameB == "ground") ||
            (nameB == "umbra" && nameA == "ground") {
             isOnGround = true
+        }
+        
+        if (nameA == "projectile" && nameB == "enemy") ||
+           (nameB == "projectile" && nameA == "enemy") {
+            if nameA == "projectile" {
+                contact.bodyA.node?.removeFromParent()
+            } else {
+                contact.bodyB.node?.removeFromParent()
+            }
+            if enemy1Alive && contact.bodyA.node?.parent == enemy1 ||
+               contact.bodyB.node?.parent == enemy1 {
+                killEnemy1()
+            } else {
+                killEnemy2()
+            }
+        }
+        
+        if (nameA == "umbra" && nameB == "enemy") ||
+           (nameB == "umbra" && nameA == "enemy") {
+            takeDamage()
         }
     }
 }
