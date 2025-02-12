@@ -10,6 +10,10 @@ import SpriteKit
 
 class Stage2Scene: SKScene {
     
+    var hasFire = false
+    var fireOrb: SKNode!
+    
+    
     var enemy1: SKNode!
     var enemy2: SKNode!
     var enemy1MovingRight = true
@@ -40,6 +44,7 @@ class Stage2Scene: SKScene {
         addButtons()
         addHealthBar()
         addStageLabel()
+        spawnFireOrb()
         
     }
     
@@ -110,7 +115,7 @@ class Stage2Scene: SKScene {
         
         umbraBody.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         umbraBody.physicsBody?.allowsRotation = false
-        umbraBody.physicsBody?.categoryBitMask = 0x1 << 0
+        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4
         umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
@@ -213,7 +218,13 @@ class Stage2Scene: SKScene {
     
     func shoot() {
         let ball = SKShapeNode(circleOfRadius: 8)
-        ball.fillColor = UIColor(red: 0.9, green: 0.8, blue: 0.2, alpha: 1.0)
+        
+        if hasFire {
+            ball.fillColor = UIColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 1.0)
+        } else {
+            ball.fillColor = UIColor(red: 0.9, green: 0.8, blue: 0.2, alpha: 1.0)
+        }
+        
         ball.strokeColor = .clear
         ball.position = umbraBody.position
         ball.name = "projectile"
@@ -223,8 +234,9 @@ class Stage2Scene: SKScene {
         ball.physicsBody?.contactTestBitMask = 0x1 << 3
         ball.physicsBody?.collisionBitMask = 0
         addChild(ball)
+        
         let direction: CGFloat = facingRight ? 1 : -1
-        let move = SKAction.moveBy(x: direction * size.width, y: 0, duration: 0.6)
+        let move = SKAction.moveBy(x: direction * size.width, y: 0, duration: 0.5)
         let remove = SKAction.removeFromParent()
         ball.run(SKAction.sequence([move, remove]))
     }
@@ -347,6 +359,63 @@ class Stage2Scene: SKScene {
         enemy2.run(SKAction.sequence([fade, remove]))
     }
     
+    func spawnFireOrb() {
+        fireOrb = SKNode()
+        fireOrb.position = CGPoint(x: size.width / 2, y: 160)
+        fireOrb.name = "fireOrb"
+        
+        // Orb glow ring
+        let ring = SKShapeNode(circleOfRadius: 18)
+        ring.fillColor = UIColor(red: 1.0, green: 0.4, blue: 0.1, alpha: 0.3)
+        ring.strokeColor = UIColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 1.0)
+        ring.lineWidth = 2
+        fireOrb.addChild(ring)
+        
+        // Orb core
+        let core = SKShapeNode(circleOfRadius: 10)
+        core.fillColor = UIColor(red: 1.0, green: 0.6, blue: 0.1, alpha: 1.0)
+        core.strokeColor = .clear
+        fireOrb.addChild(core)
+        
+        // Label
+        let label = SKLabelNode(text: "FIRE")
+        label.fontSize = 9
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        fireOrb.addChild(label)
+        
+        // Pulse
+        let pulse = SKAction.sequence([
+            SKAction.scale(to: 1.2, duration: 0.6),
+            SKAction.scale(to: 1.0, duration: 0.6)
+        ])
+        fireOrb.run(SKAction.repeatForever(pulse))
+        
+        fireOrb.physicsBody = SKPhysicsBody(circleOfRadius: 18)
+        fireOrb.physicsBody?.isDynamic = false
+        fireOrb.physicsBody?.categoryBitMask = 0x1 << 4
+        fireOrb.physicsBody?.contactTestBitMask = 0x1 << 0
+        fireOrb.physicsBody?.collisionBitMask = 0
+        
+        addChild(fireOrb)
+    }
+
+    func collectFireOrb() {
+        hasFire = true
+        fireOrb.removeFromParent()
+        
+        let collected = SKLabelNode(text: "FIRE BEAM GET!")
+        collected.fontSize = 20
+        collected.fontColor = UIColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 1.0)
+        collected.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+        collected.zPosition = 20
+        addChild(collected)
+        
+        let fadeOut = SKAction.fadeOut(withDuration: 1.5)
+        let remove = SKAction.removeFromParent()
+        collected.run(SKAction.sequence([fadeOut, remove]))
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
             let location = touch.location(in: self)
@@ -406,6 +475,12 @@ extension Stage2Scene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
         let nameA = contact.bodyA.node?.name ?? ""
         let nameB = contact.bodyB.node?.name ?? ""
+        
+        
+        if (nameA == "umbra" && nameB == "fireOrb") ||
+           (nameB == "umbra" && nameA == "fireOrb") {
+            collectFireOrb()
+        }
         
         if (nameA == "umbra" && nameB == "ground") ||
            (nameB == "umbra" && nameA == "ground") {
