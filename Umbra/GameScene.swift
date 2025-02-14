@@ -45,6 +45,7 @@ class GameScene: SKScene {
         spawnUmbra()
         spawnEnemy()
         spawnPowerUp()
+        spawnDoubleJumpOrb()
         addButtons()
         addHealthBar()
         addPowerUpHUD()
@@ -125,7 +126,7 @@ class GameScene: SKScene {
         
         umbraBody.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         umbraBody.physicsBody?.allowsRotation = false
-        umbraBody.physicsBody?.categoryBitMask = 0x1 << 0
+        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4 | 0x1 << 5 | 0x1 << 6
         umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4 | 0x1 << 5
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
@@ -257,6 +258,59 @@ class GameScene: SKScene {
         let fadeOut = SKAction.fadeOut(withDuration: 1.5)
         let remove = SKAction.removeFromParent()
         collected.run(SKAction.sequence([fadeOut, remove]))
+    }
+    
+    func spawnDoubleJumpOrb() {
+        let orb = SKNode()
+        orb.position = CGPoint(x: size.width * 0.3, y: 160)
+        orb.name = "doubleJumpOrb"
+        
+        let ring = SKShapeNode(circleOfRadius: 18)
+        ring.fillColor = UIColor(red: 0.8, green: 0.4, blue: 1.0, alpha: 0.3)
+        ring.strokeColor = UIColor(red: 0.8, green: 0.4, blue: 1.0, alpha: 1.0)
+        ring.lineWidth = 2
+        orb.addChild(ring)
+        
+        let core = SKShapeNode(circleOfRadius: 10)
+        core.fillColor = UIColor(red: 0.9, green: 0.5, blue: 1.0, alpha: 1.0)
+        core.strokeColor = .clear
+        orb.addChild(core)
+        
+        let label = SKLabelNode(text: "2x")
+        label.fontSize = 9
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        orb.addChild(label)
+        
+        let pulse = SKAction.sequence([
+            SKAction.scale(to: 1.2, duration: 0.6),
+            SKAction.scale(to: 1.0, duration: 0.6)
+        ])
+        orb.run(SKAction.repeatForever(pulse))
+        
+        orb.physicsBody = SKPhysicsBody(circleOfRadius: 18)
+        orb.physicsBody?.isDynamic = false
+        orb.physicsBody?.categoryBitMask = 0x1 << 6
+        orb.physicsBody?.contactTestBitMask = 0x1 << 0
+        orb.physicsBody?.collisionBitMask = 0
+        
+        addChild(orb)
+    }
+
+    func collectDoubleJumpOrb() {
+        hasDoubleJump = true
+        childNode(withName: "doubleJumpOrb")?.removeFromParent()
+        
+        let msg = SKLabelNode(text: "DOUBLE JUMP GET!")
+        msg.fontSize = 20
+        msg.fontColor = UIColor(red: 0.8, green: 0.4, blue: 1.0, alpha: 1.0)
+        msg.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+        msg.zPosition = 20
+        addChild(msg)
+        
+        let fade = SKAction.fadeOut(withDuration: 1.5)
+        let remove = SKAction.removeFromParent()
+        msg.run(SKAction.sequence([fade, remove]))
     }
     
     func addHealthBar() {
@@ -581,6 +635,11 @@ extension GameScene: SKPhysicsContactDelegate {
         if (nameA == "umbra" && nameB == "ground") ||
            (nameB == "umbra" && nameA == "ground") {
             isOnGround = true
+        }
+        
+        if (nameA == "umbra" && nameB == "doubleJumpOrb") ||
+           (nameB == "umbra" && nameA == "doubleJumpOrb") {
+            collectDoubleJumpOrb()
         }
         
         if (nameA == "umbra" && nameB == "ground") ||
