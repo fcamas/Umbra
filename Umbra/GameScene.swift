@@ -7,6 +7,8 @@
 import SpriteKit
 
 class GameScene: SKScene {
+    var hasDoubleJump = false
+    var jumpsUsed = 0
     
     var umbraBody: SKNode!
     var movingLeft = false
@@ -540,9 +542,15 @@ class GameScene: SKScene {
     }
     
     func jump() {
-        guard isOnGround else { return }
-        isOnGround = false
-        umbraBody.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 120))
+        if isOnGround {
+            isOnGround = false
+            jumpsUsed = 1
+            umbraBody.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 80))
+        } else if hasDoubleJump && jumpsUsed < 2 {
+            jumpsUsed = 2
+            umbraBody.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
+            umbraBody.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 80))
+        }
     }
     
     override func update(_ currentTime: TimeInterval) {
@@ -573,6 +581,12 @@ extension GameScene: SKPhysicsContactDelegate {
         if (nameA == "umbra" && nameB == "ground") ||
            (nameB == "umbra" && nameA == "ground") {
             isOnGround = true
+        }
+        
+        if (nameA == "umbra" && nameB == "ground") ||
+           (nameB == "umbra" && nameA == "ground") {
+            isOnGround = true
+            jumpsUsed = 0
         }
         
         if (nameA == "projectile" && nameB == "enemy") ||
