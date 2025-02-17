@@ -12,6 +12,7 @@ class Stage2Scene: SKScene {
     
     var hasFire = false
     var fireOrb: SKNode!
+    var enemiesKilled = 0
     
     
     var enemy1: SKNode!
@@ -115,7 +116,7 @@ class Stage2Scene: SKScene {
         
         umbraBody.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         umbraBody.physicsBody?.allowsRotation = false
-        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4
+        umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3 | 0x1 << 4 | 0x1 << 5
         umbraBody.physicsBody?.contactTestBitMask = 0x1 << 1 | 0x1 << 3
         umbraBody.physicsBody?.collisionBitMask = 0x1 << 1
         
@@ -349,6 +350,7 @@ class Stage2Scene: SKScene {
         let fade = SKAction.fadeOut(withDuration: 0.3)
         let remove = SKAction.removeFromParent()
         enemy1.run(SKAction.sequence([fade, remove]))
+        checkAllEnemiesDead()
     }
 
     func killEnemy2() {
@@ -357,6 +359,7 @@ class Stage2Scene: SKScene {
         let fade = SKAction.fadeOut(withDuration: 0.3)
         let remove = SKAction.removeFromParent()
         enemy2.run(SKAction.sequence([fade, remove]))
+        checkAllEnemiesDead()
     }
     
     func spawnFireOrb() {
@@ -416,6 +419,49 @@ class Stage2Scene: SKScene {
         collected.run(SKAction.sequence([fadeOut, remove]))
     }
     
+    func checkAllEnemiesDead() {
+        enemiesKilled += 1
+        guard enemiesKilled >= 2 else { return }
+        
+        let door = SKShapeNode(rectOf: CGSize(width: 24, height: 64), cornerRadius: 6)
+        door.fillColor = UIColor(red: 0.0, green: 0.1, blue: 0.5, alpha: 0.9)
+        door.strokeColor = UIColor(red: 0.2, green: 0.4, blue: 1.0, alpha: 1.0)
+        door.lineWidth = 2
+        door.position = CGPoint(x: size.width / 2, y: 130)
+        door.name = "stage3Door"
+        door.zPosition = 2
+        
+        let pulse = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.5, duration: 0.6),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.6)
+        ])
+        door.run(SKAction.repeatForever(pulse))
+        
+        let label = SKLabelNode(text: "STAGE 3")
+        label.fontSize = 10
+        label.fontColor = UIColor(red: 0.2, green: 0.4, blue: 1.0, alpha: 1.0)
+        label.fontName = "AvenirNext-Bold"
+        label.position = CGPoint(x: 0, y: 38)
+        door.addChild(label)
+        
+        door.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 24, height: 64))
+        door.physicsBody?.isDynamic = false
+        door.physicsBody?.categoryBitMask = 0x1 << 5
+        door.physicsBody?.contactTestBitMask = 0x1 << 0
+        door.physicsBody?.collisionBitMask = 0
+        addChild(door)
+        
+        let msg = SKLabelNode(text: "ALL CLEAR!")
+        msg.fontSize = 24
+        msg.fontColor = UIColor(red: 0.2, green: 0.4, blue: 1.0, alpha: 1.0)
+        msg.fontName = "AvenirNext-Bold"
+        msg.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+        msg.zPosition = 20
+        addChild(msg)
+        let fade = SKAction.fadeOut(withDuration: 1.5)
+        let remove = SKAction.removeFromParent()
+        msg.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), fade, remove]))
+    }
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
             let location = touch.location(in: self)
@@ -480,6 +526,13 @@ extension Stage2Scene: SKPhysicsContactDelegate {
         if (nameA == "umbra" && nameB == "fireOrb") ||
            (nameB == "umbra" && nameA == "fireOrb") {
             collectFireOrb()
+        }
+        
+        if (nameA == "umbra" && nameB == "stage3Door") ||
+           (nameB == "umbra" && nameA == "stage3Door") {
+            let stage3 = Stage3Scene(size: size)
+            stage3.scaleMode = scaleMode
+            view?.presentScene(stage3, transition: SKTransition.fade(withDuration: 1.0))
         }
         
         if (nameA == "umbra" && nameB == "ground") ||
