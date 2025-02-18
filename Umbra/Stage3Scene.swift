@@ -10,6 +10,12 @@ import SpriteKit
 
 class Stage3Scene: SKScene {
     
+    var finalBoss: SKNode!
+    var finalBossAlive = true
+    var finalBossHealth = 8
+    var finalBossMovingRight = true
+    var finalBossSpeed: CGFloat = 3.0
+    
     var umbraBody: SKNode!
     var movingLeft = false
     var movingRight = false
@@ -34,6 +40,7 @@ class Stage3Scene: SKScene {
         addButtons()
         addHealthBar()
         addStageLabel()
+        spawnFinalBoss()
     }
     
     func buildStage3() {
@@ -284,6 +291,124 @@ class Stage3Scene: SKScene {
         }
     }
     
+    func spawnFinalBoss() {
+        finalBoss = SKNode()
+        finalBoss.position = CGPoint(x: size.width / 2, y: 140)
+        finalBoss.name = "enemy"
+        
+        finalBoss.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 120, height: 120))
+        finalBoss.physicsBody?.allowsRotation = false
+        finalBoss.physicsBody?.categoryBitMask = 0x1 << 3
+        finalBoss.physicsBody?.contactTestBitMask = 0x1 << 2 | 0x1 << 0
+        finalBoss.physicsBody?.collisionBitMask = 0x1 << 1
+        
+        // Boss sprite — bigger and blue tinted
+        let sprite = SKSpriteNode(imageNamed: "enemy_sprite")
+        sprite.size = CGSize(width: 140, height: 140)
+        sprite.name = "enemyBody"
+        sprite.color = UIColor(red: 0.2, green: 0.3, blue: 1.0, alpha: 1.0)
+        sprite.colorBlendFactor = 0.4
+        finalBoss.addChild(sprite)
+        
+        // Health bar
+        let hpBg = SKShapeNode(rectOf: CGSize(width: 204, height: 14), cornerRadius: 3)
+        hpBg.fillColor = UIColor(red: 0.1, green: 0.1, blue: 0.3, alpha: 1.0)
+        hpBg.strokeColor = .clear
+        hpBg.position = CGPoint(x: 0, y: 82)
+        finalBoss.addChild(hpBg)
+        
+        let hpBar = SKShapeNode(rectOf: CGSize(width: 200, height: 10), cornerRadius: 2)
+        hpBar.fillColor = UIColor(red: 0.2, green: 0.4, blue: 1.0, alpha: 1.0)
+        hpBar.strokeColor = .clear
+        hpBar.position = CGPoint(x: 0, y: 82)
+        hpBar.name = "finalBossHpBar"
+        finalBoss.addChild(hpBar)
+        
+        let nameLabel = SKLabelNode(text: "VOID BEAST")
+        nameLabel.fontSize = 12
+        nameLabel.fontColor = UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)
+        nameLabel.fontName = "AvenirNext-Bold"
+        nameLabel.position = CGPoint(x: 0, y: 96)
+        finalBoss.addChild(nameLabel)
+        
+        // Pulse
+        let pulse = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.6, duration: 0.4),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.4)
+        ])
+        sprite.run(SKAction.repeatForever(pulse))
+        
+        addChild(finalBoss)
+    }
+
+    func killFinalBoss() {
+        guard finalBossAlive else { return }
+        finalBossAlive = false
+        
+        let shakeRight = SKAction.moveBy(x: 12, y: 0, duration: 0.05)
+        let shakeLeft = SKAction.moveBy(x: -12, y: 0, duration: 0.05)
+        self.run(SKAction.repeat(SKAction.sequence([shakeRight, shakeLeft]), count: 8))
+        
+        let flash = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.1, duration: 0.08),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.08)
+        ])
+        let explode = SKAction.repeat(flash, count: 8)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let showVictory = SKAction.run { self.showVictoryScreen() }
+        let remove = SKAction.removeFromParent()
+        
+        finalBoss.run(SKAction.sequence([explode, fadeOut, showVictory, remove]))
+    }
+
+    func showVictoryScreen() {
+        let overlay = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height))
+        overlay.fillColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.8)
+        overlay.strokeColor = .clear
+        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        overlay.zPosition = 20
+        addChild(overlay)
+        
+        let title = SKLabelNode(text: "YOU WIN!")
+        title.fontSize = 52
+        title.fontColor = UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
+        title.fontName = "AvenirNext-Bold"
+        title.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
+        title.zPosition = 21
+        addChild(title)
+        
+        let pulse = SKAction.sequence([
+            SKAction.scale(to: 1.1, duration: 0.5),
+            SKAction.scale(to: 1.0, duration: 0.5)
+        ])
+        title.run(SKAction.repeatForever(pulse))
+        
+        let sub = SKLabelNode(text: "Umbra has conquered the darkness")
+        sub.fontSize = 14
+        sub.fontColor = UIColor(red: 0.6, green: 0.6, blue: 0.6, alpha: 1.0)
+        sub.fontName = "AvenirNext-Regular"
+        sub.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        sub.zPosition = 21
+        addChild(sub)
+        
+        let btn = SKShapeNode(rectOf: CGSize(width: 200, height: 46), cornerRadius: 12)
+        btn.fillColor = UIColor(red: 0.1, green: 0.1, blue: 0.3, alpha: 1.0)
+        btn.strokeColor = UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)
+        btn.lineWidth = 1.5
+        btn.position = CGPoint(x: size.width / 2, y: size.height / 2 - 50)
+        btn.name = "restartBtn"
+        btn.zPosition = 21
+        
+        let btnLabel = SKLabelNode(text: "BACK TO MENU")
+        btnLabel.fontSize = 15
+        btnLabel.fontColor = UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)
+        btnLabel.fontName = "AvenirNext-Bold"
+        btnLabel.verticalAlignmentMode = .center
+        btnLabel.name = "restartBtn"
+        btn.addChild(btnLabel)
+        addChild(btn)
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
             let location = touch.location(in: self)
@@ -317,6 +442,15 @@ class Stage3Scene: SKScene {
         if let sprite = umbraBody.childNode(withName: "umbraSprite") as? SKSpriteNode {
             sprite.xScale = facingRight ? 1.0 : -1.0
         }
+        if finalBossAlive {
+            if finalBossMovingRight {
+                finalBoss.position.x += finalBossSpeed
+                if finalBoss.position.x > size.width - 100 { finalBossMovingRight = false }
+            } else {
+                finalBoss.position.x -= finalBossSpeed
+                if finalBoss.position.x < 100 { finalBossMovingRight = true }
+            }
+        }
     }
 }
 
@@ -324,10 +458,40 @@ extension Stage3Scene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
         let nameA = contact.bodyA.node?.name ?? ""
         let nameB = contact.bodyB.node?.name ?? ""
+        
         if (nameA == "umbra" && nameB == "ground") ||
            (nameB == "umbra" && nameA == "ground") {
             isOnGround = true
             jumpsUsed = 0
+        }
+        
+        if (nameA == "projectile" && nameB == "enemy") ||
+           (nameB == "projectile" && nameA == "enemy") {
+            if nameA == "projectile" {
+                contact.bodyA.node?.removeFromParent()
+            } else {
+                contact.bodyB.node?.removeFromParent()
+            }
+            guard finalBossAlive && finalBossHealth > 0 else { return }
+            finalBossHealth -= 1
+            
+            if let bar = finalBoss.childNode(withName: "finalBossHpBar") as? SKShapeNode {
+                let ratio = CGFloat(finalBossHealth) / 8.0
+                bar.xScale = ratio
+            }
+            if finalBossHealth == 3 {
+                finalBossSpeed = 5.5
+                if let sprite = finalBoss.childNode(withName: "enemyBody") as? SKSpriteNode {
+                    sprite.color = .red
+                    sprite.colorBlendFactor = 0.7
+                }
+            }
+            if finalBossHealth <= 0 { killFinalBoss() }
+        }
+        
+        if (nameA == "umbra" && nameB == "enemy") ||
+           (nameB == "umbra" && nameA == "enemy") {
+            takeDamage()
         }
     }
 }
