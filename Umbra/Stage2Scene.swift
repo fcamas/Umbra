@@ -542,15 +542,20 @@ extension Stage2Scene: SKPhysicsContactDelegate {
         
         if (nameA == "projectile" && nameB == "enemy") ||
            (nameB == "projectile" && nameA == "enemy") {
+            
+            // Remove projectile
             if nameA == "projectile" {
                 contact.bodyA.node?.removeFromParent()
             } else {
                 contact.bodyB.node?.removeFromParent()
             }
-            if enemy1Alive && contact.bodyA.node?.parent == enemy1 ||
-               contact.bodyB.node?.parent == enemy1 {
+            
+            // Figure out which enemy was hit
+            let enemyNode = nameA == "enemy" ? contact.bodyA.node : contact.bodyB.node
+            
+            if enemyNode === enemy1 && enemy1Alive {
                 killEnemy1()
-            } else {
+            } else if enemyNode === enemy2 && enemy2Alive {
                 killEnemy2()
             }
         }
