@@ -28,6 +28,7 @@ class Stage3Scene: SKScene {
     var invincible = false
     var hasDoubleJump = true
     var jumpsUsed = 0
+    var joystick: JoystickNode!
     
     override func didMove(to view: SKView) {
         backgroundColor = .black
@@ -164,50 +165,51 @@ class Stage3Scene: SKScene {
     }
     
     func addButtons() {
-        let leftBtn = SKShapeNode(rectOf: CGSize(width: 55, height: 55), cornerRadius: 10)
-        leftBtn.fillColor = UIColor(white: 0.2, alpha: 0.8)
-        leftBtn.strokeColor = .clear
-        leftBtn.position = CGPoint(x: 50, y: 50)
-        leftBtn.name = "leftBtn"
-        leftBtn.zPosition = 10
-        let leftLabel = SKLabelNode(text: "<")
-        leftLabel.fontSize = 26
-        leftLabel.verticalAlignmentMode = .center
-        leftBtn.addChild(leftLabel)
-        addChild(leftBtn)
+        joystick = JoystickNode()
+        joystick.position = CGPoint(x: 80, y: 60)
+        joystick.zPosition = 10
+        joystick.onMove = { [weak self] value in
+            guard let self = self else { return }
+            if value < -0.2 {
+                self.movingLeft = true
+                self.movingRight = false
+                self.facingRight = false
+            } else if value > 0.2 {
+                self.movingRight = true
+                self.movingLeft = false
+                self.facingRight = true
+            } else {
+                self.movingLeft = false
+                self.movingRight = false
+            }
+        }
+        joystick.onJump = { [weak self] in
+            self?.jump()
+        }
+        addChild(joystick)
         
-        let rightBtn = SKShapeNode(rectOf: CGSize(width: 55, height: 55), cornerRadius: 10)
-        rightBtn.fillColor = UIColor(white: 0.2, alpha: 0.8)
-        rightBtn.strokeColor = .clear
-        rightBtn.position = CGPoint(x: 115, y: 50)
-        rightBtn.name = "rightBtn"
-        rightBtn.zPosition = 10
-        let rightLabel = SKLabelNode(text: ">")
-        rightLabel.fontSize = 26
-        rightLabel.verticalAlignmentMode = .center
-        rightBtn.addChild(rightLabel)
-        addChild(rightBtn)
-        
-        let jumpBtn = SKShapeNode(rectOf: CGSize(width: 55, height: 55), cornerRadius: 10)
+        let jumpBtn = SKShapeNode(circleOfRadius: 28)
         jumpBtn.fillColor = UIColor(white: 0.2, alpha: 0.8)
-        jumpBtn.strokeColor = .clear
-        jumpBtn.position = CGPoint(x: size.width - 50, y: 50)
+        jumpBtn.strokeColor = UIColor(white: 0.5, alpha: 0.5)
+        jumpBtn.lineWidth = 1.5
+        jumpBtn.position = CGPoint(x: size.width - 50, y: 55)
         jumpBtn.name = "jumpBtn"
         jumpBtn.zPosition = 10
         let jumpLabel = SKLabelNode(text: "^")
-        jumpLabel.fontSize = 26
+        jumpLabel.fontSize = 22
         jumpLabel.verticalAlignmentMode = .center
         jumpBtn.addChild(jumpLabel)
         addChild(jumpBtn)
         
-        let attackBtn = SKShapeNode(rectOf: CGSize(width: 55, height: 55), cornerRadius: 10)
+        let attackBtn = SKShapeNode(circleOfRadius: 28)
         attackBtn.fillColor = UIColor(red: 0.5, green: 0.1, blue: 0.1, alpha: 0.8)
-        attackBtn.strokeColor = .clear
-        attackBtn.position = CGPoint(x: size.width - 115, y: 50)
+        attackBtn.strokeColor = UIColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 0.8)
+        attackBtn.lineWidth = 1.5
+        attackBtn.position = CGPoint(x: size.width - 115, y: 55)
         attackBtn.name = "attackBtn"
         attackBtn.zPosition = 10
         let attackLabel = SKLabelNode(text: "X")
-        attackLabel.fontSize = 26
+        attackLabel.fontSize = 22
         attackLabel.verticalAlignmentMode = .center
         attackBtn.addChild(attackLabel)
         addChild(attackBtn)
