@@ -8,6 +8,10 @@ import SpriteKit
 
 class GameScene: SKScene {
     
+    var iceAbilityBtn: AbilityButton!
+    var fireAbilityBtn: AbilityButton!
+    
+    
     var hasDoubleJump = false
     var jumpsUsed = 0
     var joystick: JoystickNode!
@@ -51,6 +55,7 @@ class GameScene: SKScene {
         addButtons()
         addHealthBar()
         addPowerUpHUD()
+        addAbilityButtons()
     }
     
     func enterStage2() {
@@ -243,17 +248,30 @@ class GameScene: SKScene {
         addChild(powerUpOrb)
     }
     
+    func addAbilityButtons() {
+        // Ice ability button
+        iceAbilityBtn = AbilityButton(
+            radius: 26,
+            iconText: "❄",
+            color: UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
+        )
+        iceAbilityBtn.position = CGPoint(x: size.width - 185, y: 55)
+        iceAbilityBtn.zPosition = 10
+        iceAbilityBtn.name = "iceAbilityBtn"
+        addChild(iceAbilityBtn)
+    }
+    
+    
     func collectIceOrb() {
         hasIce = true
         powerUpOrb.removeFromParent()
-        powerUpLabel.text = "ICE"
-        powerUpLabel.fontColor = UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
         
-        // Flash collected message
+        iceAbilityBtn.unlock(color: UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0))
+        
         let collected = SKLabelNode(text: "ICE BEAM GET!")
-        collected.fontSize = 22
+        collected.fontSize = 20
         collected.fontColor = UIColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
-        collected.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
+        collected.position = CGPoint(x: size.width / 2, y: size.height / 2 + 40)
         collected.zPosition = 20
         addChild(collected)
         
@@ -587,6 +605,13 @@ class GameScene: SKScene {
                 menu.scaleMode = scaleMode
                 let transition = SKTransition.fade(withDuration: 0.8)
                 view?.presentScene(menu, transition: transition)
+            }
+            if name == "iceAbilityBtn" {
+                if iceAbilityBtn.isUnlocked && !iceAbilityBtn.isOnCooldown {
+                    hasIce = true
+                    shoot()
+                    iceAbilityBtn.triggerCooldown(duration: 1.0)
+                }
             }
             if name == "leftBtn" { movingLeft = true; facingRight = false }
             if name == "rightBtn" { movingRight = true; facingRight = true }
