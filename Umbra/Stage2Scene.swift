@@ -9,6 +9,7 @@
 import SpriteKit
 
 class Stage2Scene: SKScene {
+    var fireAbilityBtn: AbilityButton!
     
     var hasFire = false
     var fireOrb: SKNode!
@@ -44,6 +45,7 @@ class Stage2Scene: SKScene {
         spawnUmbra()
         spawnEnemies()
         addButtons()
+        addAbilityButtons()
         addHealthBar()
         addStageLabel()
         spawnFireOrb()
@@ -133,6 +135,18 @@ class Stage2Scene: SKScene {
         sprite.run(SKAction.repeatForever(SKAction.sequence([floatUp, floatDown])))
         
         addChild(umbraBody)
+    }
+    
+    func addAbilityButtons() {
+        fireAbilityBtn = AbilityButton(
+            radius: 26,
+            iconText: "🔥",
+            color: UIColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 1.0)
+        )
+        fireAbilityBtn.position = CGPoint(x: size.width - 185, y: 55)
+        fireAbilityBtn.zPosition = 10
+        fireAbilityBtn.name = "fireAbilityBtn"
+        addChild(fireAbilityBtn)
     }
     
     func addHealthBar() {
@@ -413,6 +427,8 @@ class Stage2Scene: SKScene {
         hasFire = true
         fireOrb.removeFromParent()
         
+        fireAbilityBtn.unlock(color: UIColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 1.0))
+        
         let collected = SKLabelNode(text: "FIRE BEAM GET!")
         collected.fontSize = 20
         collected.fontColor = UIColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 1.0)
@@ -481,6 +497,13 @@ class Stage2Scene: SKScene {
                 let menu = MenuScene(size: size)
                 menu.scaleMode = scaleMode
                 view?.presentScene(menu, transition: SKTransition.fade(withDuration: 0.8))
+            }
+            if name == "fireAbilityBtn" {
+                if fireAbilityBtn.isUnlocked && !fireAbilityBtn.isOnCooldown {
+                    hasFire = true
+                    shoot()
+                    fireAbilityBtn.triggerCooldown(duration: 1.0)
+                }
             }
         }
     }
