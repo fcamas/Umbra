@@ -37,8 +37,8 @@ class MenuScene: SKScene {
     
     func addLogo() {
         let logo = SKSpriteNode(imageNamed: "AppIcon")
-        logo.size = CGSize(width: 80, height: 80)
-        logo.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
+        logo.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+        logo.size = CGSize(width: 70, height: 70)
         logo.zPosition = 10
         
         // Gentle float
@@ -52,10 +52,13 @@ class MenuScene: SKScene {
     
     func addTitle() {
         let title = SKLabelNode(text: "UMBRA")
-        title.fontSize = 52
+    
         title.fontColor = .white
         title.fontName = "AvenirNext-Bold"
-        title.position = CGPoint(x: size.width / 2, y: size.height / 2 + 10)
+        title.position = CGPoint(x: size.width / 2, y: size.height / 2 - 10)
+        title.fontSize = 44
+
+     
         title.zPosition = 10
         
         let pulse = SKAction.sequence([
@@ -69,7 +72,7 @@ class MenuScene: SKScene {
         sub.fontSize = 13
         sub.fontColor = UIColor(red: 0.6, green: 0.5, blue: 0.8, alpha: 1.0)
         sub.fontName = "AvenirNext-Regular"
-        sub.position = CGPoint(x: size.width / 2, y: size.height / 2 - 12)
+        sub.position = CGPoint(x: size.width / 2, y: size.height / 2 - 30)
         sub.zPosition = 10
         addChild(sub)
     }
@@ -79,7 +82,7 @@ class MenuScene: SKScene {
         btn.fillColor = UIColor(red: 0.3, green: 0.1, blue: 0.5, alpha: 0.9)
         btn.strokeColor = UIColor(red: 0.7, green: 0.3, blue: 1.0, alpha: 1.0)
         btn.lineWidth = 2
-        btn.position = CGPoint(x: size.width / 2, y: size.height / 2 - 50)
+        btn.position = CGPoint(x: size.width / 2, y: size.height / 2 - 68)
         btn.name = "startBtn"
         btn.zPosition = 10
         
