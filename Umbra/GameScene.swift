@@ -385,6 +385,7 @@ class GameScene: SKScene {
         health -= 20
         if health < 0 { health = 0 }
         updateHealthBar()
+        run(SKAction.playSoundFileNamed("hit.wav", waitForCompletion: false))
         
         let fadeOut = SKAction.fadeAlpha(to: 0.2, duration: 0.1)
         let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.1)
@@ -534,6 +535,7 @@ class GameScene: SKScene {
         ball.physicsBody?.collisionBitMask = 0
         
         addChild(ball)
+        run(SKAction.playSoundFileNamed("shoot.wav", waitForCompletion: false))
         
         let direction: CGFloat = facingRight ? 1 : -1
         let move = SKAction.moveBy(x: direction * size.width, y: 0, duration: 0.6)
@@ -631,6 +633,8 @@ class GameScene: SKScene {
     }
     
     func jump() {
+        
+        run(SKAction.playSoundFileNamed("jump.wav", waitForCompletion: false))
         if isOnGround {
             isOnGround = false
             jumpsUsed = 1
