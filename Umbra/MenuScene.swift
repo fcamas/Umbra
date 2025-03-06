@@ -9,7 +9,11 @@ import SpriteKit
 
 class MenuScene: SKScene {
     
+    var bgMusic: SKAudioNode!
+    
+    
     override func didMove(to view: SKView) {
+        playBackgroundMusic()
         addBackground()
         addLogo()
         addTitle()
@@ -17,6 +21,15 @@ class MenuScene: SKScene {
         addVersionLabel()
     }
     
+    
+
+    func playBackgroundMusic() {
+       // bgMusic = SKAudioNode(fileNamed: "bgm.mp3")
+       // bgMusic.autoplayLooped = true
+        
+        
+        //addChild(bgMusic)
+    }
     func addBackground() {
         let bg = SKSpriteNode(imageNamed: "cave_bg")
         bg.size = CGSize(width: size.width, height: size.height)

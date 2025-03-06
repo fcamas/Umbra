@@ -7,6 +7,7 @@
 import SpriteKit
 
 class GameScene: SKScene {
+    var bgMusic: SKAudioNode!
     
     var iceAbilityBtn: AbilityButton!
     var fireAbilityBtn: AbilityButton!
@@ -44,6 +45,7 @@ class GameScene: SKScene {
     
     override func didMove(to view: SKView) {
         backgroundColor = .black
+        playBackgroundMusic()
         physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         physicsWorld.contactDelegate = self
         
@@ -64,7 +66,11 @@ class GameScene: SKScene {
         let transition = SKTransition.fade(withDuration: 1.0)
         view?.presentScene(stage2, transition: transition)
     }
-    
+    func playBackgroundMusic() {
+//        bgMusic = SKAudioNode(fileNamed: "bgm.mp3")
+//        bgMusic.autoplayLooped = true
+//        addChild(bgMusic)
+    }
     
     func buildStage() {
         // Cave background
